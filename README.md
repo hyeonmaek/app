@@ -6,6 +6,8 @@
 
 [firmware](https://github.com/hyeonmaek/firmware) · [app](https://github.com/hyeonmaek/app) · [web](https://github.com/hyeonmaek/web)
 
+![분대원마다 폰과 단말이 한 쌍. 단말끼리 암호 BLE 방송, NU-87 게이트웨이가 C2와 연결](docs/images/system.svg)
+
 ## 📍 위치
 
 폰이 2초마다 자기 단말에 GPS 좌표를 넣어 둡니다. 단말이 사격개시나 긴급구호를 보낼 때 이 좌표가 암호화된 방송에 함께 실려 C2 지도에 찍힙니다.

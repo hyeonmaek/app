@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SquadLink 폰</title>
+<style>
+  :root{
+    --bg:#0d1013; --surface:#161b20; --line:#2a333a; --fg:#e9ece7; --muted:#95a0a6;
+    --accent:#e7a81e; --ok:#52b983; --crit:#e5563c;
+    --mono:"SF Mono",ui-monospace,Menlo,monospace; --sans:system-ui,"Apple SD Gothic Neo",sans-serif;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.5}
+  .wrap{max-width:460px;margin:0 auto;padding:20px 16px 40px}
+  h1{font-size:20px;margin:0 0 2px}
+  .sub{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;margin-bottom:18px}
+  button{font-family:var(--sans);font-size:15px;font-weight:600;border:none;border-radius:10px;padding:13px 16px;cursor:pointer}
+  .primary{background:var(--accent);color:#1a1200;width:100%}
+  .primary:disabled{opacity:.4;cursor:default}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:16px}
+  .state{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:13px;margin-bottom:4px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--crit)}
+  .dot.on{background:var(--ok)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+  .tile{background:#10151a;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .tile .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .tile .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+  label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+  textarea{width:100%;background:#10151a;border:1px solid var(--line);border-radius:10px;color:var(--fg);
+    font-family:var(--sans);font-size:16px;padding:12px;resize:none;min-height:70px}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .row{display:flex;gap:10px;margin-top:10px}
+  .send{background:var(--ok);color:#042014;flex:1}
+  .send:disabled{opacity:.4;cursor:default}
+  .log{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:14px;white-space:pre-wrap;word-break:break-all}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .quick button{background:#10151a;border:1px solid var(--line);color:var(--fg);font-size:13px;font-weight:500;padding:8px 12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SquadLink 폰</h1>
+  <div class="sub">D4D×EDTH · 단말 연결 · 메시지</div>
+
+  <button id="connect" class="primary">단말 연결</button>
+
+  <div class="card" id="statusCard" hidden>
+    <div class="state"><span class="dot" id="dot"></span><span id="stateText">연결 안 됨</span></div>
+    <div class="grid" style="grid-template-columns:1fr">
+      <div class="tile"><div class="k">최근 동료 알림</div><div class="v" id="evt" style="font-size:17px">대기 중</div></div>
+    </div>
+  </div>
+
+  <div class="card" id="msgCard" hidden>
+    <label>단말로 보낼 메시지</label>
+    <textarea id="text" placeholder="예) 2시 방향 적 2명, 대기"></textarea>
+    <div class="quick">
+      <button data-t="접촉, 대기">접촉, 대기</button>
+      <button data-t="이동 개시">이동 개시</button>
+      <button data-t="엄호 요청">엄호 요청</button>
+    </div>
+    <div class="row">
+      <button id="send" class="send" disabled>단말에 보내기</button>
+    </div>
+    <div class="hint">보낸 글이 단말(E-1/E-2) 화면에 바로 뜹니다.</div>
+  </div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+const SVC = "51550001-4252-414e-4753-414e32303236";
+const MSG = "51550003-4252-414e-4753-414e32303236";
+const STATUS = "51550004-4252-414e-4753-414e32303236";
+const EVT = {1:"이상 없음",2:"긴급구조",3:"적발견·사격",4:"수신확인",5:"적발견·금지",6:"정정"};
+
+let chMsg = null, device = null;
+const $ = id => document.getElementById(id);
+function log(m){ $("log").textContent = "[" + new Date().toLocaleTimeString() + "] " + m + "\n" + $("log").textContent; }
+
+if(!navigator.bluetooth){
+  log("이 브라우저는 Web Bluetooth 미지원. 맥/안드로이드 크롬(또는 엣지)에서 열어 주세요.");
+  $("connect").disabled = true;
+}
+
+$("connect").onclick = async () => {
+  try{
+    log("단말 검색...");
+    device = await navigator.bluetooth.requestDevice({
+      filters:[{namePrefix:"SQUAD"}], optionalServices:[SVC]
+    });
+    device.addEventListener("gattserverdisconnected", onDisconnect);
+    log(device.name + " 연결 중...");
+    const server = await device.gatt.connect();
+    const svc = await server.getPrimaryService(SVC);
+    chMsg = await svc.getCharacteristic(MSG);
+    const chStatus = await svc.getCharacteristic(STATUS);
+    await chStatus.startNotifications();
+    chStatus.addEventListener("characteristicvaluechanged", e => renderStatus(e.target.value));
+    $("statusCard").hidden = false; $("msgCard").hidden = false;
+    $("dot").classList.add("on");
+    $("stateText").textContent = device.name + " 연결됨";
+    $("send").disabled = false;
+    $("connect").textContent = "연결됨 (" + device.name + ")";
+    $("connect").disabled = true;
+    log("연결 완료.");
+  }catch(err){ log("연결 실패: " + err); }
+};
+
+function onDisconnect(){
+  $("dot").classList.remove("on");
+  $("stateText").textContent = "연결 끊김";
+  $("send").disabled = true;
+  $("connect").disabled = false;
+  $("connect").textContent = "단말 연결";
+  log("연결 끊김.");
+}
+
+function renderStatus(dv){
+  // 단말→폰 형식: [버전=1][종류][보낸이][arg1][arg2]...  종류 3=event
+  const b = new Uint8Array(dv.buffer);
+  if(b.length < 4 || b[0] !== 1) return;
+  const kind = b[1], from = b[2], arg1 = b[3];
+  if(kind === 3){
+    const name = EVT[arg1] ?? ("코드 " + arg1);
+    $("evt").textContent = name;
+    log("동료 알림: " + name + " (from " + from.toString(16).toUpperCase() + ")");
+  }
+}
+
+// 메시지 형식(앱 공통): [버전=1][대상(0=동료,1=중앙)][글자수][UTF-16LE × 글자수]
+async function sendMessage(t){
+  t = t.trim();
+  if(!chMsg || !t) return;
+  const n = Math.min(t.length, 255);
+  const buf = new Uint8Array(3 + n*2);
+  buf[0] = 1; buf[1] = 0; buf[2] = n;
+  for(let i=0;i<n;i++){ const u = t.charCodeAt(i); buf[3+i*2] = u & 0xFF; buf[4+i*2] = (u>>8) & 0xFF; }
+  try{
+    await chMsg.writeValue(buf);
+    log("보냄: " + t);
+    $("text").value = "";
+  }catch(err){ log("전송 실패: " + err); }
+}
+
+$("send").onclick = () => sendMessage($("text").value);
+document.querySelectorAll(".quick button").forEach(b =>
+  b.onclick = () => sendMessage(b.dataset.t));
+</script>
+</body>
+</html>

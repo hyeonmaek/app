@@ -160,6 +160,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "현맥";
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "분대 단말과 1:1로 연결해 GPS와 메시지를 주고받기 위해 블루투스를 사용합니다.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "분대 단말과 연결하기 위해 블루투스를 사용합니다.";
@@ -192,6 +193,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "현맥";
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "분대 단말과 1:1로 연결해 GPS와 메시지를 주고받기 위해 블루투스를 사용합니다.";
 				INFOPLIST_KEY_NSBluetoothPeripheralUsageDescription = "분대 단말과 연결하기 위해 블루투스를 사용합니다.";

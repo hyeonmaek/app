@@ -52,7 +52,7 @@ struct ConnectionView: View {
                 .animation(.spring(response: 0.45, dampingFraction: 0.85), value: app.found)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("SquadLink")
+            .navigationTitle("현맥")
             .sensoryFeedback(.success, trigger: app.link == .connected)
             .sensoryFeedback(.error, trigger: app.lastError)
         }

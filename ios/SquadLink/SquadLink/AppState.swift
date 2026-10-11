@@ -29,6 +29,7 @@ final class AppState: ObservableObject {
     @Published var squadKeyLoaded: Bool = false
     @Published var found: [BLEManager.FoundDevice] = []   // 찾은 단말 목록(화면 표시용으로 BLE에서 복사)
     @Published var lastError: String?
+    @Published var unread: Int = 0                    // 메시지 탭 배지(안 읽은 받은 메시지 수)
 
     private var cancellables = Set<AnyCancellable>()
     private var partial: [String: [Int: [UInt16]]] = [:]   // 조각 모으는 중인 받은 메시지
@@ -70,6 +71,7 @@ final class AppState: ObservableObject {
 
         location.start()
         startGPSTimer()
+        Notifier.shared.start()
     }
 
     // MARK: - 연결 제어
@@ -147,6 +149,8 @@ final class AppState: ObservableObject {
                 messages.insert(SquadMessage(direction: .incoming, kind: kind,
                                              fromId: fromId, text: text, time: Date()), at: 0)
             }
+            unread += 1
+            Notifier.shared.post(title: callSignOf(fromId), body: text)
         case let .event(fromId, event, bearing):
             let label = eventLabel(event)
             messages.insert(SquadMessage(direction: .incoming, kind: .event,

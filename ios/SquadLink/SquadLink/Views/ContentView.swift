@@ -9,16 +9,24 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var app: AppState
+    @State private var tab = 0
 
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             ConnectionView()
                 .tabItem { Label("연결", systemImage: "antenna.radiowaves.left.and.right") }
+                .tag(0)
             MessageListView()
                 .tabItem { Label("메시지", systemImage: "bubble.left.and.bubble.right") }
+                .badge(app.unread)
+                .tag(1)
             MapView()
                 .tabItem { Label("지도", systemImage: "map") }
+                .tag(2)
         }
+        // 메시지 탭을 보고 있으면 안 읽음 수를 비운다
+        .onChange(of: tab) { _, t in if t == 1 { app.unread = 0 } }
+        .onChange(of: app.unread) { _, n in if tab == 1 && n > 0 { app.unread = 0 } }
     }
 }
 

@@ -60,6 +60,7 @@ struct MessageListView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: sentCount)
+
         }
     }
 }

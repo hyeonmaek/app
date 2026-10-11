@@ -1,3 +1,5 @@
+<img src="docs/images/logo.png" width="120" alt="현맥">
+
 # 현맥 · 아이폰 앱
 
 **폰은 단말의 GPS와 키보드입니다.**
